@@ -2,12 +2,12 @@ import { useEffect, useState, useCallback } from 'react';
 import { ChakraProvider, Box, VStack, Heading } from '@chakra-ui/react';
 import { AddTodo } from './AddTodo';
 import { TodoList } from './TodoList';
-import { initDb, getTodos } from './db';
+import { initDb, getTodos, Todo } from './db';
 
 export function App() {
     const [isDbReady, setIsDbReady] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const [todos, setTodos] = useState<any[]>([]);
+    const [todos, setTodos] = useState<Todo[]>([]);
 
     const fetchTodos = useCallback(async () => {
         try {

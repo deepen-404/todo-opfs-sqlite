@@ -1,12 +1,6 @@
 import { VStack, HStack, Text, Checkbox, Spinner, Input, Button } from '@chakra-ui/react';
-import { toggleTodo, updateTodo, deleteTodo } from './db';
+import { toggleTodo, updateTodo, deleteTodo, Todo } from './db';
 import { useState } from 'react';
-
-interface Todo {
-    id: number;
-    text: string;
-    completed: number;
-}
 
 interface TodoListProps {
     todos: Todo[];

@@ -3,11 +3,11 @@ import { OpenResult, sqlite3Worker1Promiser, TableInfoRow, type SqlitePromiser }
 let dbPromise: Promise<SqlitePromiser> | null = null;
 let dbId: string | undefined = undefined;
 
-interface Todo {
+export interface Todo {
     id: number;
     text: string;
-    completed: boolean;
-    deleted: boolean;
+    completed: number;
+    deleted: number;
 }
 
 async function createInitialSchema(promiser: SqlitePromiser) {
