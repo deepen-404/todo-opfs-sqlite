@@ -1,4 +1,4 @@
-import { sqlite3Worker1Promiser, type SqlitePromiser } from '@sqlite.org/sqlite-wasm';
+import { OpenResult, sqlite3Worker1Promiser, type SqlitePromiser } from '@sqlite.org/sqlite-wasm';
 
 // Replace the generic Promiser type with the specific SqlitePromiser interface
 let dbPromise: Promise<SqlitePromiser> | null = null;
@@ -74,7 +74,7 @@ export async function initDb(): Promise<SqlitePromiser> {
             console.log('Done initializing. Opening database...');
 
             // Type the openResponse
-            let openResponse: any;
+            let openResponse: OpenResult;
 
             try {
                 openResponse = await promiser('open', {

@@ -32,15 +32,6 @@ declare module '@sqlite.org/sqlite-wasm' {
         rows: any[][];
     }
 
-    interface OpenResult {
-        result: {
-            dbId: string;
-            filename: string;
-            persistent?: boolean;
-            vfs?: string;
-        };
-    }
-
     interface PrepareResult {
         sql: string;
         columnNames: string[];
@@ -78,9 +69,6 @@ declare module '@sqlite.org/sqlite-wasm' {
         dbId: string;
     }
 
-    // Union type for all possible command parameters
-    type CommandParams = OpenParams | ExecParams | PrepareParams | CloseParams;
-
     // All possible SQLite commands
     type SqliteCommand =
         | 'open'
@@ -97,10 +85,16 @@ declare module '@sqlite.org/sqlite-wasm' {
 
     // The main SQLite interface that handles commands
     interface SqlitePromiser {
-        <T = any>(
-            command: SqliteCommand,
-            params: CommandParams,
-        ): Promise<T | OpenResult | ExecResult | PrepareResult | ErrorResult>;
+        // Overload for 'open' command
+        (command: 'open', params: OpenParams): Promise<OpenResult>;
+        // Overload for 'exec' command
+        (command: 'exec', params: ExecParams): Promise<ExecResult>;
+        // Overload for 'prepare' command
+        (command: 'prepare', params: PrepareParams): Promise<PrepareResult>;
+        // Overload for 'close' command
+        (command: 'close', params: CloseParams): Promise<void>;
+        // Generic overload for other commands
+        <T = any>(command: SqliteCommand, params: any): Promise<T>;
 
         // Utility methods
         close(): Promise<void>;
