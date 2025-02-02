@@ -27,9 +27,11 @@ declare module '@sqlite.org/sqlite-wasm' {
 
     // Result types for different operations
     interface ExecResult {
-        rowCount: number;
-        columnNames: string[];
-        rows: any[][];
+        result: {
+            rowCount: number;
+            columnNames: string[];
+            resultRows: any[];
+        };
     }
 
     interface PrepareResult {
@@ -58,6 +60,7 @@ declare module '@sqlite.org/sqlite-wasm' {
         bind?: any[];
         rowMode?: 'array' | 'object';
         resultRowMode?: 'array' | 'object';
+        dbId?: string;
     }
 
     interface PrepareParams {
@@ -94,21 +97,19 @@ declare module '@sqlite.org/sqlite-wasm' {
         // Overload for 'close' command
         (command: 'close', params: CloseParams): Promise<void>;
         // Generic overload for other commands
-        <T = any>(command: SqliteCommand, params: any): Promise<T>;
+        <T = any>(command: Omit<SqliteCommand, 'open' | 'exec' | 'prepare' | 'close'>, params: any): Promise<T>;
 
         // Utility methods
         close(): Promise<void>;
         terminate(): void;
     }
 
-    // Database handle interface
-    interface Database {
-        dbId: string | undefined;
-        filename: string;
-        // Add methods that operate on an open database
-        exec(sql: string, params?: any[]): Promise<ExecResult>;
-        prepare(sql: string): Promise<PrepareResult>;
-        close(): Promise<void>;
+    interface TableInfoRow {
+        name: string;
+        type: string;
+        notnull: number;
+        dflt_value: string | null;
+        pk: number;
     }
 
     // Export the main function that initializes SQLite

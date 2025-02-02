@@ -1,6 +1,5 @@
-import { OpenResult, sqlite3Worker1Promiser, type SqlitePromiser } from '@sqlite.org/sqlite-wasm';
+import { OpenResult, sqlite3Worker1Promiser, TableInfoRow, type SqlitePromiser } from '@sqlite.org/sqlite-wasm';
 
-// Replace the generic Promiser type with the specific SqlitePromiser interface
 let dbPromise: Promise<SqlitePromiser> | null = null;
 let dbId: string | undefined = undefined;
 
@@ -9,14 +8,6 @@ interface Todo {
     text: string;
     completed: boolean;
     deleted: boolean;
-}
-
-interface TableInfoRow {
-    name: string;
-    type: string;
-    notnull: number;
-    dflt_value: string | null;
-    pk: number;
 }
 
 async function createInitialSchema(promiser: SqlitePromiser) {
