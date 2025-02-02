@@ -1,9 +1,25 @@
-import { sqlite3Worker1Promiser } from '@sqlite.org/sqlite-wasm';
+import { sqlite3Worker1Promiser, type SqlitePromiser } from '@sqlite.org/sqlite-wasm';
 
-let dbPromise: Promise<(command: string, params: any) => Promise<any>> | null = null;
-let dbId: string | null = null;
+// Replace the generic Promiser type with the specific SqlitePromiser interface
+let dbPromise: Promise<SqlitePromiser> | null = null;
+let dbId: string | undefined = undefined;
 
-async function createInitialSchema(promiser: (command: string, params: any) => Promise<any>) {
+interface Todo {
+    id: number;
+    text: string;
+    completed: boolean;
+    deleted: boolean;
+}
+
+interface TableInfoRow {
+    name: string;
+    type: string;
+    notnull: number;
+    dflt_value: string | null;
+    pk: number;
+}
+
+async function createInitialSchema(promiser: SqlitePromiser) {
     await promiser('exec', {
         sql: `
       CREATE TABLE IF NOT EXISTS todos (
@@ -16,7 +32,7 @@ async function createInitialSchema(promiser: (command: string, params: any) => P
     });
 }
 
-async function migrateDatabase(promiser: (command: string, params: any) => Promise<any>) {
+async function migrateDatabase(promiser: SqlitePromiser) {
     try {
         const tableInfo = await promiser('exec', {
             sql: 'PRAGMA table_info(todos)',
@@ -24,8 +40,7 @@ async function migrateDatabase(promiser: (command: string, params: any) => Promi
             dbId,
         });
 
-        // migration check
-        const deletedColumnExists = tableInfo.result.resultRows.some((row: any) => row.name === 'deleted');
+        const deletedColumnExists = tableInfo.result.resultRows.some((row: TableInfoRow) => row.name === 'deleted');
 
         if (!deletedColumnExists) {
             await promiser('exec', {
@@ -42,23 +57,25 @@ async function migrateDatabase(promiser: (command: string, params: any) => Promi
     }
 }
 
-export async function initDb() {
+export async function initDb(): Promise<SqlitePromiser> {
     if (dbPromise) return dbPromise;
 
-    dbPromise = new Promise(async (resolve, reject) => {
+    dbPromise = (async () => {
         try {
             console.log('Loading and initializing SQLite3 module...');
 
-            const promiser = (await new Promise<unknown>((resolve) => {
+            // Properly type the sqlite3Worker1Promiser
+            const promiser = await new Promise<SqlitePromiser>((resolve) => {
                 const _promiser = sqlite3Worker1Promiser({
                     onready: () => resolve(_promiser),
                 });
-            })) as (command: string, params: any) => Promise<any>;
+            });
 
             console.log('Done initializing. Opening database...');
 
-            // OPFS
-            let openResponse;
+            // Type the openResponse
+            let openResponse: any;
+
             try {
                 openResponse = await promiser('open', {
                     filename: 'file:todo.sqlite3?vfs=opfs',
@@ -72,6 +89,10 @@ export async function initDb() {
                 console.log('In-memory database opened');
             }
 
+            if (!openResponse.result.dbId) {
+                throw new Error('Failed to get database ID after opening');
+            }
+
             dbId = openResponse.result.dbId;
 
             // create schema
@@ -81,17 +102,17 @@ export async function initDb() {
             await migrateDatabase(promiser);
 
             console.log('Database initialized and migrated successfully');
-            resolve(promiser);
+            return promiser;
         } catch (err) {
             console.error('Failed to initialize or migrate database:', err);
-            reject(err);
+            throw err;
         }
-    });
+    })();
 
     return dbPromise;
 }
 
-export async function addTodo(text: string) {
+export async function addTodo(text: string): Promise<void> {
     const promiser = await initDb();
     try {
         await promiser('exec', {
@@ -105,18 +126,18 @@ export async function addTodo(text: string) {
     }
 }
 
-export async function getTodos() {
+export async function getTodos(): Promise<Todo[]> {
     const promiser = await initDb();
     const result = await promiser('exec', {
         sql: 'SELECT * FROM todos WHERE deleted = 0 ORDER BY id DESC',
         rowMode: 'object',
         dbId,
     });
-    const { resultRows: rows } = result.result;
-    return rows || [];
+
+    return result.result.resultRows || [];
 }
 
-export async function toggleTodo(id: number) {
+export async function toggleTodo(id: number): Promise<void> {
     const promiser = await initDb();
     await promiser('exec', {
         sql: 'UPDATE todos SET completed = NOT completed WHERE id = ?',
@@ -125,7 +146,7 @@ export async function toggleTodo(id: number) {
     });
 }
 
-export async function updateTodo(id: number, text: string) {
+export async function updateTodo(id: number, text: string): Promise<void> {
     const promiser = await initDb();
     try {
         await promiser('exec', {
@@ -140,7 +161,7 @@ export async function updateTodo(id: number, text: string) {
     }
 }
 
-export async function deleteTodo(id: number) {
+export async function deleteTodo(id: number): Promise<void> {
     const promiser = await initDb();
     try {
         await promiser('exec', {
