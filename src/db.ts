@@ -1,4 +1,9 @@
-import { OpenResult, sqlite3Worker1Promiser, TableInfoRow, type SqlitePromiser } from '@sqlite.org/sqlite-wasm';
+import {
+    type OpenResult,
+    sqlite3Worker1Promiser,
+    type TableInfoRow,
+    type SqlitePromiser,
+} from '@sqlite.org/sqlite-wasm';
 
 let dbPromise: Promise<SqlitePromiser> | null = null;
 let dbId: string | undefined = undefined;
@@ -13,7 +18,7 @@ export interface Todo {
 async function createInitialSchema(promiser: SqlitePromiser) {
     await promiser('exec', {
         sql: `
-      CREATE TABLE IF NOT EXISTS todos (
+        CREATE TABLE IF NOT EXISTS todos (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         text TEXT NOT NULL,
         completed BOOLEAN NOT NULL DEFAULT 0
